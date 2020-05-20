@@ -24,6 +24,7 @@ public:
 
 private:
     std::deque<T> _queue;
+
     std::condition_variable _cond;
     std::mutex _mutex;
 };
@@ -34,7 +35,7 @@ private:
 // can be either „red“ or „green“. Also, add the private method „void cycleThroughPhases()“. 
 // Furthermore, there shall be the private member _currentPhase which can take „red“ or „green“ as its value. 
 enum class TrafficLightPhase{
-    red=0,
+    red = 0,
     green
 };
 class TrafficLight:public TrafficObject
@@ -45,7 +46,6 @@ public:
     // getters / setters
     TrafficLightPhase getCurrentPhase()const;
     void waitForGreen();
-    void setCurrentPhase(const TrafficLightPhase color);
     void simulate() override ;
 
     // typical behaviour methods

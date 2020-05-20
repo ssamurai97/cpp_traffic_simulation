@@ -59,9 +59,8 @@ void TrafficLight::waitForGreen()
 
         auto cur_phase = _msg_queue->receive();
         if (cur_phase == TrafficLightPhase::green)
-            break;
+            return;
     }
-  _condition.notify_one();
 }
 
 TrafficLightPhase TrafficLight::getCurrentPhase() const
@@ -118,6 +117,3 @@ void TrafficLight::cycleThroughPhases()
 
 }
 
-void TrafficLight::setCurrentPhase( const TrafficLightPhase color) {
-                   _currentPhase = color;
-}
