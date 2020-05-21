@@ -13,7 +13,7 @@ T MessageQueue<T>::receive()
     // FP.5a : The method receive should use std::unique_lock<std::mutex> and _condition.wait() 
     // to wait for and receive new messages and pull them from the queue using move semantics. 
     // The received object should then be returned by the receive function.
-    std::unique_lock u_lock(_mutex);
+    std::unique_lock u_lock(msg_mutex);
 
     _cond.wait(u_lock, [this] {
         return !_queue.empty();
@@ -31,7 +31,7 @@ void MessageQueue<T>::send(T &&msg)
 {
     // FP.4a : The method send should use the mechanisms std::lock_guard<std::mutex> 
     // as well as _condition.notify_one() to add a new message to the queue and afterwards send a notification.
-    std::unique_lock u_lock(_mutex);
+    std::unique_lock u_lock(msg_mutex);
 
     _queue.push_back(std::move(msg));
 
@@ -53,14 +53,15 @@ void TrafficLight::waitForGreen()
     // FP.5b : add the implementation of the method waitForGreen, in which an infinite while-loop 
     // runs and repeatedly calls the receive function on the message queue. 
     // Once it receives TrafficLightPhase::green, the method returns.
-
+       std::unique_lock lock{_mutex};
     while (1) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
         auto cur_phase = _msg_queue->receive();
         if (cur_phase == TrafficLightPhase::green)
-            return;
+            break;
     }
+    _condition.notify_one();
 }
 
 TrafficLightPhase TrafficLight::getCurrentPhase() const
@@ -85,7 +86,7 @@ void TrafficLight::cycleThroughPhases()
     std::random_device rd;
     std::mt19937 engine(rd());
 
-    std::uniform_int_distribution<> dis{4, 6};
+    std::uniform_int_distribution<> dis(4.0, 6.0);
 
     std::unique_lock u_lock{_mutex};
 
@@ -99,10 +100,14 @@ void TrafficLight::cycleThroughPhases()
     while(1){
         long time_elaped = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - last_update).count();
         //sleep every iteration 1 sec
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(0));
         //traffic toggle
         if(time_elaped >= duration){
-            _currentPhase = _currentPhase == TrafficLightPhase::red ? TrafficLightPhase::green : TrafficLightPhase::red;
+            if(_currentPhase == TrafficLightPhase::red){
+                _currentPhase = TrafficLightPhase::green;
+            } else{
+                _currentPhase = TrafficLightPhase::red;
+            }
 
             auto msg = _currentPhase;
 
@@ -111,6 +116,7 @@ void TrafficLight::cycleThroughPhases()
 
             //reset time for next cycle
             last_update = std::chrono::system_clock::now();
+            duration = dis(engine);
         }
     }
 

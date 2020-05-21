@@ -26,7 +26,7 @@ private:
     std::deque<T> _queue;
 
     std::condition_variable _cond;
-    std::mutex _mutex;
+    std::mutex msg_mutex;
 };
 
 // FP.1 : Define a class „TrafficLight“ which is a child class of TrafficObject. 
