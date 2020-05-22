@@ -4,6 +4,9 @@
 #include<queue>
 #include "TrafficLight.h"
 
+using namespace std::chrono_literals;
+
+
 /* Implementation of class "MessageQueue" */
 
 
@@ -58,7 +61,7 @@ void TrafficLight::waitForGreen()
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
         auto cur_phase = _msg_queue->receive();
-        if (cur_phase == TrafficLightPhase::green)
+        if (cur_phase == green)
             break;
     }
     _condition.notify_one();
@@ -86,27 +89,25 @@ void TrafficLight::cycleThroughPhases()
     std::random_device rd;
     std::mt19937 engine(rd());
 
-    std::uniform_int_distribution<> dis(4.0, 6.0);
-
     std::unique_lock<std::mutex> u_lock{_mutex};
 
     std::cout<< "Traffic light # "<< _id << "::cycleThroughPhase " <<std::this_thread::get_id()<<'\n';
     u_lock.unlock();
-
+    
+     std::uniform_int_distribution<> dis(4.0, 6.0);
     auto duration = dis(engine);
-
     auto last_update = std::chrono::system_clock::now();
 
     while(1){
-        long time_elaped = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - last_update).count();
+        long time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - last_update).count();
         //sleep every iteration 1 sec
-        std::this_thread::sleep_for(std::chrono::milliseconds(0));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
         //traffic toggle
-        if(time_elaped >= duration){
-            if(_currentPhase == TrafficLightPhase::red){
-                _currentPhase = TrafficLightPhase::green;
+        if(time_elapsed >= duration){
+            if(_currentPhase == red){
+                _currentPhase = green;
             } else{
-                _currentPhase = TrafficLightPhase::red;
+                _currentPhase = red;
             }
 
             auto msg = _currentPhase;
@@ -115,8 +116,8 @@ void TrafficLight::cycleThroughPhases()
             sent.wait();
 
             //reset time for next cycle
-            last_update = std::chrono::system_clock::now();
             duration = dis(engine);
+            last_update = std::chrono::system_clock::now();
         }
     }
 
